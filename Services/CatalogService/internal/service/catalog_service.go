@@ -1,0 +1,82 @@
+package service
+
+import (
+	"CatalogService/internal/models"
+	"CatalogService/internal/repository"
+)
+
+type CatalogService struct {
+	songRepo       *repository.SongRepo
+	albumRepo      *repository.AlbumRepo
+	authorRepo     *repository.AuthorRepo
+	genreRepo      *repository.GenreRepo
+	songAuthorRepo *repository.SongAuthorRepo
+}
+
+func NewCatalogService(s repository.SongRepo, al repository.AlbumRepo, au repository.AuthorRepo, g repository.GenreRepo, sa repository.SongAuthorRepo) *CatalogService {
+	return &CatalogService{songRepo: &s, albumRepo: &al, authorRepo: &au, genreRepo: &g, songAuthorRepo: &sa}
+}
+
+func NewCatalogServiceOnlyAuthor(au repository.AuthorRepo) *CatalogService {
+	return &CatalogService{authorRepo: &au}
+}
+
+func (c *CatalogService) GetSongs() ([]models.Song, error) {
+	songs, err := c.songRepo.GetSongs()
+	return songs, err
+}
+
+func (c *CatalogService) GetSong(id int) (models.Song, error) {
+	song, err := c.songRepo.GetSong(id)
+	return *song, err
+}
+
+func (c *CatalogService) AddSong(title, filePath string, duration int, albumId, genreId *int) (int, error) {
+	return c.songRepo.AddSong(title, filePath, duration, albumId, genreId)
+}
+
+func (c *CatalogService) AddAuthorBySongId(author models.Author, songId int) error {
+	return c.songAuthorRepo.AddAuthorBySongId(author, songId)
+}
+
+func (c *CatalogService) GetAlbums(userId int) ([]models.Album, error) {
+	author, err := c.authorRepo.GetAuthorByUserId(userId)
+	if err != nil {
+		return nil, err
+	}
+	return c.albumRepo.GetAlbumsByAuthorId(author.Id)
+}
+
+func (c *CatalogService) GetAuthorByName(name string) (*models.Author, error) {
+	return c.authorRepo.GetAuthorByName(name)
+}
+
+func (c *CatalogService) GetAuthorByUserId(userId int) (*models.Author, error) {
+	return c.authorRepo.GetAuthorByUserId(userId)
+}
+
+func (c *CatalogService) GetGenres() ([]models.Genre, error) {
+	return c.genreRepo.GetGenres()
+}
+
+func (c *CatalogService) GetAuthorsBySongId(songId int) ([]models.Author, error) {
+	authorsId, err := c.songAuthorRepo.GetAuthorsIdBySongId(songId)
+	if err != nil {
+		return nil, err
+	}
+
+	var authors []models.Author
+	for _, id := range authorsId {
+		author, err := c.authorRepo.GetAuthorById(id)
+		if err != nil {
+			return nil, err
+		}
+		authors = append(authors, *author)
+	}
+
+	return authors, nil
+}
+
+func (c *CatalogService) AddAuthor(userId int, name string) error {
+	return c.authorRepo.AddAuthor(userId, name)
+}

@@ -1,0 +1,68 @@
+<!-- templates/add_song.html -->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Добавить Песню</title>
+</head>
+<body>
+    <h1>Добавить Новую Песню</h1>
+    <form action="http://localhost:9998/add-song/" method="Post" enctype="multipart/form-data">
+        <div>
+            <label for="title">Название Песни:</label>
+            <input type="text" id="title" name="title" required>
+        </div>
+        <div class="form-group">
+            <label>Еще авторы:</label>
+            <button type="button" class="add-author-btn" onclick="addAuthor()">➕ Добавить Автора</button>
+            <div class="authors-container">
+                
+            </div>
+        </div>
+        <div>
+            <label for="album">Альбом:</label>
+            <select id="album" name="album_id">
+                <option value="">-- Выберите Альбом --</option>
+                {{range .Albums}}
+                    <option value="{{.Id}}">{{.Name}}</option>
+                {{end}}
+            </select>
+        </div>
+        <div>
+            <label for="genre">Жанр:</label>
+            <select id="genre" name="genre_id" required>
+                <option value="">-- Выберите Жанр --</option>
+                {{range .Genres}}
+                    <option value="{{.Id}}">{{.Name}}</option>
+                {{end}}
+            </select>
+        </div>
+        <div>
+            <label for="fileToUpload">Музыкальный Файл:</label>
+            <input type="file" id="file" name="fileToUpload" accept=".mp3" required>
+        </div>
+        <div>
+            <button type="submit">Добавить Песню</button>
+        </div>
+    </form>
+
+    <script>
+        function addAuthor() {
+            const authorsContainer = document.querySelector('.authors-container');
+            const authorInput = document.createElement('div');
+            authorInput.className = 'author-input';
+            authorInput.innerHTML = `
+                <input type="text" name="authors" placeholder="Имя Автора" required>
+                <button type="button" class="remove-author-btn" onclick="removeAuthor(this)">✖️</button>
+            `;
+            authorsContainer.appendChild(authorInput);
+        }
+
+        function removeAuthor(button) {
+            const authorInput = button.parentElement;
+            const authorsContainer = document.querySelector('.authors-container');
+            authorsContainer.removeChild(authorInput);
+        }
+    </script>
+</body>
+</html>

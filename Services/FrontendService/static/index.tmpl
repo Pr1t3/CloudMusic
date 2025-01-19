@@ -1,0 +1,178 @@
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Главная - Музыкальный Сервис</title>
+    <style>
+        /* Базовое оформление */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .navbar {
+            background-color: #1DB954;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+        }
+        .navbar a {
+            color: white;
+            text-decoration: none;
+            margin-left: 20px;
+            display: flex;
+            align-items: center;
+        }
+        .navbar img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+        }
+        .container {
+            padding: 20px;
+        }
+        .song-list {
+            list-style: none;
+            padding: 0;
+        }
+        .song-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        .song-details {
+            display: flex;
+            flex-direction: column;
+        }
+        .song-title {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .song-author {
+            font-size: 14px;
+            color: #555;
+        }
+        .song-duration {
+            font-size: 14px;
+            color: #555;
+        }
+        .play-button {
+            background-color: #1DB954;
+            border: none;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .play-button.paused {
+            background-color: #ff4c4c;
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <a href="http://localhost:9997/profile">
+            <img id="profileImage" src="data:{{ .PhotoType }}; base64, {{ .PhotoData }}" alt="Фото профиля">
+        </a>
+    </div>
+    <div class="container">
+        <h1>Последние Песни</h1>
+        <ul class="song-list">
+            {{range .Songs}}
+                <li class="song-item">
+                    <div class="song-details">
+                        <span class="song-title">{{.Title}}</span>
+                        <span class="song-author">Автор: {{ range $index, $author := .Authors }}{{ if gt $index 0 }}, {{ end }}{{ .Name }}{{ end }}
+                        </span>
+                        <span class="song-duration">Длительность: {{formatDuration .Duration}}</span>
+                    </div>
+                    <button class="play-button">
+                        ▶️ Play
+                    </button>
+                </li>
+            {{end}}
+        </ul>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const playButtons = document.querySelectorAll('.play-button');
+            let currentAudio = null;
+            let currentButton = null;
+
+            playButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const fileURL = button.getAttribute('data-file-url');
+                    const songID = button.getAttribute('data-song-id');
+
+                    // Если нажата кнопка уже текущего воспроизведения
+                    if (currentAudio && currentButton === button) {
+                        if (currentAudio.paused) {
+                            currentAudio.play();
+                            button.textContent = '⏸️ Pause';
+                            button.classList.remove('paused');
+                        } else {
+                            currentAudio.pause();
+                            button.textContent = '▶️ Play';
+                            button.classList.add('paused');
+                        }
+                        return;
+                    }
+
+                    // Если воспроизведение уже идет, остановить его
+                    if (currentAudio) {
+                        currentAudio.pause();
+                        currentButton.textContent = '▶️ Play';
+                        currentButton.classList.remove('paused');
+                    }
+
+                    // Создать новый аудио-элемент
+                    const audio = new Audio(fileURL);
+                    audio.play();
+                    button.textContent = '⏸️ Pause';
+                    button.classList.remove('paused');
+
+                    // Обработчик окончания воспроизведения
+                    audio.addEventListener('ended', () => {
+                        button.textContent = '▶️ Play';
+                        button.classList.remove('paused');
+                        currentAudio = null;
+                        currentButton = null;
+                    });
+
+                    // Установить текущие аудио и кнопку
+                    currentAudio = audio;
+                    currentButton = button;
+
+                    // Отправить запрос на Player Service для отслеживания воспроизведения
+                    fetch(`/player/play/${songID}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${localStorage.getItem('token')}` // Предполагается, что токен хранится в localStorage
+                        }
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Ошибка при отправке запроса на воспроизведение');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('Воспроизведение запущено:', data);
+                    })
+                    .catch(error => {
+                        console.error('Ошибка:', error);
+                        alert('Не удалось воспроизвести песню.');
+                    });
+                });
+            });
+        });
+    </script>
+</body>
+</html>

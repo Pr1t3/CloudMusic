@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Профиль пользователя</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        .profile-container {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .profile-container img {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+        }
+        .profile-info {
+            flex: 1;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        input[type="password"], input[type="file"] {
+            padding: 8px;
+            width: 100%;
+            margin-top: 5px;
+        }
+        button {
+            padding: 10px 20px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #0059ff;
+        }
+        .error {
+            color: red;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Профиль пользователя</h1>
+
+    <div class="profile-container">
+        <img id="profileImage" src="data:{{ .PhotoType }}; base64, {{ .PhotoData }}" alt="Фото профиля">
+        <div class="profile-info">
+            <p>Email: {{ .Email }}</p>
+            <input type="file" id="fileInput" name="photo" accept="image/*" style="display: none;" onchange="uploadImage(event)">
+            <button onclick="document.getElementById('fileInput').click();">Загрузить фото</button>
+        </div>
+    </div>
+    {{ if .IsAuthor }}
+        <form method="GET" action="http://localhost:9997/add-song/" style="margin-top: 10px">
+            <button type="submit">Выложить песню</button>
+        </form>
+    {{ else }}
+        <form method="GET" action="http://localhost:9997/become-author/" style="margin-top: 10px">
+            <button type="submit">Стать автором</button>
+        </form>
+    {{ end }}
+
+    <h2>Изменить пароль</h2>
+    <form method="POST" action="http://localhost:9998/change-password" onsubmit="return validateForm()">
+        <div class="form-group">
+            <label for="oldPassword">Старый пароль:</label>
+            <input type="password" id="oldPassword" name="oldPassword" required>
+        </div>
+
+        <div class="form-group">
+            <label for="newPassword">Новый пароль:</label>
+            <input type="password" id="newPassword" name="newPassword" required>
+        </div>
+
+        <div class="form-group">
+            <label for="confirmPassword">Подтвердите новый пароль:</label>
+            <input type="password" id="confirmPassword" name="confirmPassword" required>
+        </div>
+
+        <button type="submit">Сменить пароль</button>
+    </form>
+
+    <form method="GET" action="http://localhost:9997/" style="margin-top: 10px">
+        <button type="submit">Назад</button>
+    </form>
+
+    <p id="errorMessage" class="error"></p>
+
+    <script>
+        function validateForm() {
+            const newPassword = document.getElementById("newPassword").value;
+            const confirmPassword = document.getElementById("confirmPassword").value;
+            const errorMessage = document.getElementById("errorMessage");
+
+            if (newPassword !== confirmPassword) {
+                errorMessage.textContent = "Новый пароль и подтверждение пароля не совпадают.";
+                return false;
+            }
+
+            errorMessage.textContent = "";
+            return true;
+        }
+
+        async function uploadImage(event) {
+            const file = event.target.files[0];
+            const errorMessage = document.getElementById("errorMessage");
+
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('fileToUpload', file);
+
+            try {
+                const response = await fetch('http://localhost:9998/upload-photo', {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'include' 
+                });
+
+                if (response.ok) {
+                    location.reload();
+                } else {
+                    const errorData = await response.json();
+                    errorMessage.textContent = errorData.error || "Произошла ошибка при загрузке фото.";
+                }
+            } catch (error) {
+                console.log(error)
+                errorMessage.textContent = "Не удалось подключиться к серверу.";
+            }
+        }
+    </script>
+</body>
+</html>
