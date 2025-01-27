@@ -31,7 +31,7 @@ func ProxyHandlerRedirect(target, targetRedir string) http.Handler {
 			return
 		}
 		defer resp.Body.Close()
-		if resp.StatusCode != http.StatusOK {
+		if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusPartialContent {
 			http.Error(w, "Server Internal Error", http.StatusInternalServerError)
 			return
 		}
@@ -69,7 +69,7 @@ func ProxyHandler(target string) http.Handler {
 			return
 		}
 		defer resp.Body.Close()
-		if resp.StatusCode != http.StatusOK {
+		if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusPartialContent {
 			http.Error(w, "Server Internal Error", http.StatusInternalServerError)
 			return
 		}

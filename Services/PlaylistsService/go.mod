@@ -1,9 +1,8 @@
-module CatalogService
+module PlaylistsService
 
 go 1.23.4
 
 require (
-	github.com/Eyevinn/mp4ff v0.47.0
 	github.com/go-sql-driver/mysql v1.8.1
 	github.com/rs/cors v1.11.1
 )

@@ -11,6 +11,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -187,21 +188,10 @@ func AddSong() http.Handler {
 		}
 
 		var data struct {
-			Albums []models.Album
 			Genres []models.Genre
 		}
 
-		respBody, _, err := ProxyRequest(r, "http://localhost:9989/albums", nil, http.MethodGet)
-		if err != nil {
-			http.Error(w, "Server Internal Error", http.StatusInternalServerError)
-			return
-		}
-		if err := json.Unmarshal(respBody, &data.Albums); err != nil {
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-			return
-		}
-
-		respBody, _, err = ProxyRequest(r, "http://localhost:9989/genres", nil, http.MethodGet)
+		respBody, _, err := ProxyRequest(r, "http://localhost:9989/genres", nil, http.MethodGet)
 		if err != nil {
 			http.Error(w, "Server Internal Error", http.StatusInternalServerError)
 			return
@@ -263,10 +253,12 @@ func ShowMainPage() http.Handler {
 
 		respBody, _, err := ProxyRequest(r, "http://localhost:9989/songs", nil, http.MethodGet)
 		if err != nil {
+			log.Print(err.Error())
 			http.Error(w, "Server Internal Error", http.StatusInternalServerError)
 			return
 		}
 		if err := json.Unmarshal(respBody, &data.Songs); err != nil {
+			log.Print(err.Error())
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			return
 		}
@@ -286,6 +278,136 @@ func ShowMainPage() http.Handler {
 
 		data.PhotoData = base64.StdEncoding.EncodeToString(photoData)
 		data.PhotoType = headers.Get("Photo-Type")
+
+		err = ts.Execute(w, data)
+		if err != nil {
+			log.Println(err)
+			http.Error(w, "Failed to execute template", http.StatusInternalServerError)
+			return
+		}
+	})
+}
+
+func PlaylistsPage() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		templates := []string{
+			"./static/playlists_page.tmpl",
+		}
+
+		funcMap := template.FuncMap{
+			"FormatTime": func(t time.Time) string {
+				return t.Format("January 2, 2006 at 15:04:05 PM")
+			},
+		}
+
+		ts, err := template.New("playlists_page.tmpl").Funcs(funcMap).ParseFiles(templates...)
+		if err != nil {
+			log.Println(err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		var data struct {
+			PhotoType string
+			PhotoData string
+			Playlists []models.Playlist
+		}
+
+		photoData, headers, err := ProxyRequest(r, "http://localhost:9999/get-profile-photo", nil, http.MethodGet)
+		if err != nil {
+			http.Error(w, "Server Internal Error", http.StatusInternalServerError)
+			return
+		}
+
+		data.PhotoData = base64.StdEncoding.EncodeToString(photoData)
+		data.PhotoType = headers.Get("Photo-Type")
+
+		respBody, _, err := ProxyRequest(r, "http://localhost:9987/playlists", nil, http.MethodGet)
+		if err != nil {
+			log.Print(err.Error())
+			http.Error(w, "Server Internal Error", http.StatusInternalServerError)
+			return
+		}
+		if err := json.Unmarshal(respBody, &data.Playlists); err != nil {
+			log.Print(err.Error())
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		err = ts.Execute(w, data)
+		if err != nil {
+			log.Println(err)
+			http.Error(w, "Failed to execute template", http.StatusInternalServerError)
+			return
+		}
+	})
+}
+
+func ShowPlaylist() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		templates := []string{
+			"./static/playlist.tmpl",
+		}
+
+		funcMap := template.FuncMap{
+			"formatDuration": func(totalSeconds int) string {
+				hours := totalSeconds / 3600
+				minutes := totalSeconds / 60
+				seconds := totalSeconds % 60
+				if hours > 0 {
+					return fmt.Sprintf("%02d:%02d:%02d", hours, minutes, seconds)
+				}
+				return fmt.Sprintf("%02d:%02d", minutes, seconds)
+			},
+		}
+
+		ts, err := template.New("playlist.tmpl").Funcs(funcMap).ParseFiles(templates...)
+		if err != nil {
+			log.Println(err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		var data struct {
+			PhotoType string
+			PhotoData string
+			Playlist  models.Playlist
+			Songs     []models.Song
+		}
+
+		photoData, headers, err := ProxyRequest(r, "http://localhost:9999/get-profile-photo", nil, http.MethodGet)
+		if err != nil {
+			http.Error(w, "Server Internal Error", http.StatusInternalServerError)
+			return
+		}
+
+		data.PhotoData = base64.StdEncoding.EncodeToString(photoData)
+		data.PhotoType = headers.Get("Photo-Type")
+
+		parts := strings.Split(r.URL.Path, "/")
+		playlistId := parts[len(parts)-1]
+
+		respBody, _, err := ProxyRequest(r, "http://localhost:9987/playlists/"+playlistId, nil, http.MethodGet)
+		if err != nil {
+			log.Print(err.Error())
+			http.Error(w, "Server Internal Error", http.StatusInternalServerError)
+			return
+		}
+		if err := json.Unmarshal(respBody, &data); err != nil {
+			log.Print(err.Error())
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
 
 		err = ts.Execute(w, data)
 		if err != nil {

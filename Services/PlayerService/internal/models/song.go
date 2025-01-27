@@ -9,7 +9,6 @@ type Song struct {
 	Id       int           `json:"id"`
 	Title    string        `json:"title"`
 	Duration int           `json:"duration"`
-	Size     int64         `json:"size"`
 	AlbumId  sql.NullInt32 `json:"album_id"`
 	GenreId  sql.NullInt32 `json:"genre_id"`
 	FilePath string        `json:"file_path"`

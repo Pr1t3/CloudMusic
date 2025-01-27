@@ -15,19 +15,18 @@ import (
 
 func main() {
 	mux := http.NewServeMux()
-	db, err := openDB("root:1R2o3m4a?@/CloudMusic_CatalogService?parseTime=true")
+	db, err := openDB("name:password?@/db_name?parseTime=true")
 	if err != nil {
 		print("Error in opening db")
 	}
 	defer db.Close()
 
-	catalogService := service.NewCatalogService(*repository.NewSongRepo(db), *repository.NewAlbumRepo(db), *repository.NewAuthorRepo(db), *repository.NewGenreRepo(db), *repository.NewSongAuthorRepo(db))
+	catalogService := service.NewCatalogService(*repository.NewSongRepo(db), *repository.NewAuthorRepo(db), *repository.NewGenreRepo(db), *repository.NewSongAuthorRepo(db))
 
 	catalogHandler := handler.NewCatalogHandler(catalogService)
 
 	mux.Handle("/songs", middleware.VerifyAuthMiddleware(catalogHandler.GetSongs()))
 	mux.Handle("/songs/", middleware.VerifyAuthMiddleware(catalogHandler.GetSongById()))
-	mux.Handle("/albums", middleware.VerifyAuthorMiddleware(middleware.VerifyAuthMiddleware(catalogHandler.GetAlbums()), *catalogService))
 	mux.Handle("/genres", middleware.VerifyAuthorMiddleware(middleware.VerifyAuthMiddleware(catalogHandler.GetGenres()), *catalogService))
 	mux.Handle("/authors/", middleware.VerifyAuthMiddleware(catalogHandler.GetSongAuthors()))
 	mux.Handle("/add-song/", middleware.VerifyAuthorMiddleware(middleware.VerifyAuthMiddleware(catalogHandler.AddSong()), *catalogService))

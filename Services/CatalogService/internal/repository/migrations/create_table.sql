@@ -17,25 +17,14 @@ CREATE TABLE genres (
     name VARCHAR(50) UNIQUE NOT NULL
 );
 
-CREATE TABLE albums (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    title VARCHAR(100) NOT NULL,
-    author_id INT,
-    release_date DATE,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (author_id) REFERENCES authors(id) ON DELETE SET NULL
-)
-
 CREATE TABLE songs (
     id INT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(100) NOT NULL,
-    duration int NOT NULL COMMENT "in minutes",
-    album_id INT,
+    duration int NOT NULL COMMENT "in seconds",
+    size BIGINT not null,
     genre_id INT,
     file_path VARCHAR(255) NOT NULL,
     added_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (album_id) REFERENCES albums(id) ON DELETE SET NULL,
     FOREIGN KEY (genre_id) REFERENCES genres(id) ON DELETE SET NULL
 );
 

@@ -23,7 +23,7 @@ func (s *SongRepo) GetSongs() ([]models.Song, error) {
 	var songs []models.Song
 	for rows.Next() {
 		song := models.Song{}
-		if err := rows.Scan(&song.Id, &song.Title, &song.Duration, &song.AlbumId, &song.GenreId, &song.FilePath, &song.AddedAt); err != nil {
+		if err := rows.Scan(&song.Id, &song.Title, &song.Duration, &song.Size, &song.GenreId, &song.FilePath, &song.AddedAt); err != nil {
 			return nil, err
 		}
 		songs = append(songs, song)
@@ -35,36 +35,27 @@ func (s *SongRepo) GetSong(id int) (*models.Song, error) {
 	query := `SELECT * FROM songs WHERE id = ?`
 	row := s.Db.QueryRow(query, id)
 	song := models.Song{}
-	if err := row.Scan(&song.Id, &song.Title, &song.Duration, &song.AlbumId, &song.GenreId, &song.FilePath, &song.AddedAt); err != nil {
+	if err := row.Scan(&song.Id, &song.Title, &song.Duration, &song.Size, &song.GenreId, &song.FilePath, &song.AddedAt); err != nil {
 		return nil, err
 	}
 	return &song, nil
 }
 
-func (s *SongRepo) AddSong(title, filePath string, duration int, albumId, genreId *int) (int, error) {
+func (s *SongRepo) AddSong(title, filePath string, duration int, genreId *int, size int64) (int, error) {
 	var query string
 	var err error
 	var songId int64
 	var res sql.Result
-	if albumId == nil {
-		if genreId == nil {
-			query = `INSERT INTO songs (title, duration, album_id, genre_id, file_path) VALUES(?, ?, null, null, ?)`
-			res, err = s.Db.Exec(query, title, duration, filePath)
-			if err != nil {
-				return 0, err
-			}
-			songId, err = res.LastInsertId()
-		} else {
-			query = `INSERT INTO songs (title, duration, album_id, genre_id, file_path) VALUES(?, ?, null, ?, ?)`
-			res, err = s.Db.Exec(query, title, duration, genreId, filePath)
-			if err != nil {
-				return 0, err
-			}
-			songId, err = res.LastInsertId()
+	if genreId == nil {
+		query = `INSERT INTO songs (title, duration, size, genre_id, file_path) VALUES(?, ?, ?, null, ?)`
+		res, err = s.Db.Exec(query, title, duration, size, filePath)
+		if err != nil {
+			return 0, err
 		}
+		songId, err = res.LastInsertId()
 	} else {
-		query = `INSERT INTO songs (title, duration, album_id, genre_id, file_path) VALUES(?, ?, ?, ?, ?)`
-		res, err = s.Db.Exec(query, title, duration, albumId, genreId, filePath)
+		query = `INSERT INTO songs (title, duration, size, genre_id, file_path) VALUES(?, ?, ?, ?, ?)`
+		res, err = s.Db.Exec(query, title, duration, size, genreId, filePath)
 		if err != nil {
 			return 0, err
 		}

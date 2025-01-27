@@ -7,14 +7,13 @@ import (
 
 type CatalogService struct {
 	songRepo       *repository.SongRepo
-	albumRepo      *repository.AlbumRepo
 	authorRepo     *repository.AuthorRepo
 	genreRepo      *repository.GenreRepo
 	songAuthorRepo *repository.SongAuthorRepo
 }
 
-func NewCatalogService(s repository.SongRepo, al repository.AlbumRepo, au repository.AuthorRepo, g repository.GenreRepo, sa repository.SongAuthorRepo) *CatalogService {
-	return &CatalogService{songRepo: &s, albumRepo: &al, authorRepo: &au, genreRepo: &g, songAuthorRepo: &sa}
+func NewCatalogService(s repository.SongRepo, au repository.AuthorRepo, g repository.GenreRepo, sa repository.SongAuthorRepo) *CatalogService {
+	return &CatalogService{songRepo: &s, authorRepo: &au, genreRepo: &g, songAuthorRepo: &sa}
 }
 
 func NewCatalogServiceOnlyAuthor(au repository.AuthorRepo) *CatalogService {
@@ -31,20 +30,12 @@ func (c *CatalogService) GetSong(id int) (models.Song, error) {
 	return *song, err
 }
 
-func (c *CatalogService) AddSong(title, filePath string, duration int, albumId, genreId *int) (int, error) {
-	return c.songRepo.AddSong(title, filePath, duration, albumId, genreId)
+func (c *CatalogService) AddSong(title, filePath string, duration int, genreId *int, size int64) (int, error) {
+	return c.songRepo.AddSong(title, filePath, duration, genreId, size)
 }
 
 func (c *CatalogService) AddAuthorBySongId(author models.Author, songId int) error {
 	return c.songAuthorRepo.AddAuthorBySongId(author, songId)
-}
-
-func (c *CatalogService) GetAlbums(userId int) ([]models.Album, error) {
-	author, err := c.authorRepo.GetAuthorByUserId(userId)
-	if err != nil {
-		return nil, err
-	}
-	return c.albumRepo.GetAlbumsByAuthorId(author.Id)
 }
 
 func (c *CatalogService) GetAuthorByName(name string) (*models.Author, error) {

@@ -5,26 +5,38 @@ import (
 	"CatalogService/internal/service"
 	"bytes"
 	"encoding/json"
+	"errors"
 	"io"
 	"log"
 	"net/http"
 	"strconv"
 	"strings"
 
-	"github.com/hajimehoshi/go-mp3"
+	"github.com/Eyevinn/mp4ff/mp4"
 )
 
-func getDuration(r []byte) (int, error) {
-	reader := bytes.NewReader(r)
+func getDuration(buf []byte) (int, error) {
+	reader := bytes.NewReader(buf)
 
-	d, err := mp3.NewDecoder(reader)
+	mp4File, err := mp4.DecodeFile(reader)
 	if err != nil {
-		return 0, err
+		return 0, errors.New("ошибка при декодировании MP4 файла: " + err.Error())
 	}
-	const sampleSize = 4
-	samples := int(d.Length() / sampleSize)
-	audioLength := samples / d.SampleRate()
-	return audioLength, nil
+
+	if mp4File.Moov == nil || len(mp4File.Moov.Traks) == 0 {
+		return 0, errors.New("недостаточно метаданных в MP4 файле")
+	}
+
+	track := mp4File.Moov.Traks[0]
+	mdhd := track.Mdia.Mdhd
+	if mdhd == nil {
+		return 0, errors.New("отсутствуют метаданные MDHD")
+	}
+
+	duration := mdhd.Duration
+	timeScale := mdhd.Timescale
+
+	return int(duration / uint64(timeScale)), nil
 }
 
 type CatalogHandler struct {
@@ -60,7 +72,7 @@ func (h *CatalogHandler) GetSongs() http.Handler {
 
 func (h *CatalogHandler) GetSongById() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != "GET" {
+		if r.Method != http.MethodGet {
 			http.Error(w, "Method is not allowed", http.StatusMethodNotAllowed)
 			return
 		}
@@ -80,42 +92,6 @@ func (h *CatalogHandler) GetSongById() http.Handler {
 
 		w.Header().Set("Content-Type", "application/json")
 		jsonData, err := json.Marshal(song)
-		if err != nil {
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-			return
-		}
-		w.Write(jsonData)
-	})
-}
-
-func (h *CatalogHandler) GetAlbums() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != "GET" {
-			http.Error(w, "Method is not allowed", http.StatusMethodNotAllowed)
-			return
-		}
-
-		respBody, _, err := h.ProxyRequest(r, "http://localhost:9999/get-claims/", nil, http.MethodGet)
-		if err != nil {
-			http.Error(w, "Server Internal Error", http.StatusInternalServerError)
-			return
-		}
-
-		var claims models.Claims
-
-		if err := json.Unmarshal(respBody, &claims); err != nil {
-			http.Error(w, "Status Forbidden", http.StatusForbidden)
-			return
-		}
-
-		albums, err := h.catalogService.GetAlbums(claims.UserId)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		jsonData, err := json.Marshal(albums)
 		if err != nil {
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			return
@@ -212,20 +188,7 @@ func (h *CatalogHandler) AddSong() http.Handler {
 		}
 
 		title := r.FormValue("title")
-		albumIDstring := r.FormValue("album_id")
 		genreIDstring := r.FormValue("genre_id")
-		var albumID *int
-		if albumIDstring == "" {
-			albumID = nil
-		} else {
-			res, err := strconv.Atoi(albumIDstring)
-			if err != nil {
-				log.Print(err.Error())
-				http.Error(w, "Неверный ID альбома", http.StatusBadRequest)
-				return
-			}
-			albumID = &res
-		}
 
 		genreID, err := strconv.Atoi(genreIDstring)
 		if err != nil {
@@ -301,9 +264,9 @@ func (h *CatalogHandler) AddSong() http.Handler {
 			return
 		}
 
-		songId, err := h.catalogService.AddSong(title, filePath+responseData.FileName, duration, albumID, &genreID)
+		songId, err := h.catalogService.AddSong(title, filePath+responseData.FileName, duration, &genreID, responseData.Size)
 		if err != nil {
-			log.Print(err.Error())
+			log.Print(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}

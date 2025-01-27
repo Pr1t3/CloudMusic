@@ -20,15 +20,6 @@
             </div>
         </div>
         <div>
-            <label for="album">Альбом:</label>
-            <select id="album" name="album_id">
-                <option value="">-- Выберите Альбом --</option>
-                {{range .Albums}}
-                    <option value="{{.Id}}">{{.Name}}</option>
-                {{end}}
-            </select>
-        </div>
-        <div>
             <label for="genre">Жанр:</label>
             <select id="genre" name="genre_id" required>
                 <option value="">-- Выберите Жанр --</option>
@@ -39,7 +30,7 @@
         </div>
         <div>
             <label for="fileToUpload">Музыкальный Файл:</label>
-            <input type="file" id="file" name="fileToUpload" accept=".mp3" required>
+            <input type="file" id="file" name="fileToUpload" accept=".mp4" required>
         </div>
         <div>
             <button type="submit">Добавить Песню</button>
