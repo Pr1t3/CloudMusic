@@ -21,6 +21,7 @@ func main() {
 	mux.Handle("/become-author/", handler.ProxyHandlerRedirect("http://localhost:9989", "http://localhost:9997"))
 	mux.Handle("/create-playlist/", handler.ProxyHandler("http://localhost:9987"))
 	mux.Handle("/add-song-to-playlist/", handler.ProxyHandler("http://localhost:9987"))
+	mux.Handle("/delete-playlist/", handler.ProxyHandler("http://localhost:9987"))
 	mux.Handle("/remove-song-from-playlist/", handler.ProxyHandler("http://localhost:9987"))
 	mux.Handle("/songs/", service.StripSuffix("/", handler.ProxyHandler("http://localhost:9989")))
 	mux.Handle("/authors/", handler.ProxyHandler("http://localhost:9989"))

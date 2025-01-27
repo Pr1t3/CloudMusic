@@ -218,6 +218,9 @@
                         <form method="GET" action="http://localhost:9997/playlists/{{ .Id }}">
                             <button type="submit" class="playlist-title">{{ .Name }}</button>
                         </form>
+                        <button class="delete-playlist-button" id="deletePlaylistButton-{{ .Id }}" onclick="deletePlaylist({{ .Id }})">
+                            🗑
+                        </button>
                         <span class="playlist-created-at">{{ FormatTime .CreatedAt }}</span>
                     </div>
                 </li>
@@ -378,6 +381,27 @@
                 audioPlayer.addEventListener('ended', resetPlayer);
             }
         });
+
+        function deletePlaylist(playlistId) {
+            fetch(`http://localhost:9998/delete-playlist/${playlistId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include'
+            })
+            .then(response => {
+                if (response.ok) {
+                    location.reload();
+                } else {
+                    alert('Ошибка при добавлении песни в плейлист');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Ошибка при добавлении песни в плейлист');
+            });
+        }
     </script>
 </body>
 </html>

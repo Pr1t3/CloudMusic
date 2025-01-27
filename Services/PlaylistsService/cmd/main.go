@@ -7,6 +7,7 @@ import (
 	"database/sql"
 	"log"
 	"net/http"
+	"os"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/rs/cors"
@@ -14,7 +15,7 @@ import (
 
 func main() {
 	mux := http.NewServeMux()
-	db, err := openDB("name:password?@/db_name?parseTime=true")
+	db, err := openDB(os.Args[1])
 	if err != nil {
 		print("Error in opening db")
 	}

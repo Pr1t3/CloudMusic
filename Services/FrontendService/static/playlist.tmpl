@@ -226,7 +226,7 @@
                     <button class="delete-song-button" id="deleteSongButton-{{ .Id }}" onclick="removeSongFromPlaylist({{ .Id }})">
                         🗑
                     </button>
-                    <button class="play-button" id="audioButton-{{ .Id }}" onclick="togglePlayPauseWithParams({{.Id}}, '{{.Title}}', [{{range $index, $author := .Authors}}{{if gt $index 0}}, {{end}}{{ .Name }}{{end}}], {{ .Duration }})">
+                        <button class="play-button" id="audioButton-{{ .Id }}" onclick="togglePlayPauseWithParams({{.Id}}, '{{.Title}}', [{{range $index, $author := .Authors}}{{if gt $index 0}}, {{end}}{{ .Name }}{{end}}], {{ .Duration }})">
                         ▶️
                     </button>
                 </li>
