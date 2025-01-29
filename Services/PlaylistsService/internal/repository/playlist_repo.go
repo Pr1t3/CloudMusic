@@ -14,7 +14,7 @@ func NewPlaylistRepo(db *sql.DB) *PlayListRepo {
 }
 
 func (p *PlayListRepo) GetPlaylistsByUserId(userId int) ([]models.Playlist, error) {
-	query := `SELECT * FROM playlists WHERE user_id = ?`
+	query := `SELECT * FROM playlists WHERE user_id = ? ORDER BY created_at DESC`
 	rows, err := p.Db.Query(query, userId)
 	if err != nil {
 		return nil, err

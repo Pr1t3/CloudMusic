@@ -256,7 +256,7 @@
         </div>
     </div>
 
-    <div id="myModal" class="modal">
+    <div id="new-playlist-modal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeModal()">&times;</span>
             <h2>Создать новый плейлист</h2>
@@ -277,6 +277,7 @@
         let mainPlayButton = document.getElementById('main-play-button');
         let volumeControl = document.getElementById('volumeControl');
         let volumeSlider = document.getElementById('volumeSlider');
+        let modal = document.getElementById("new-playlist-modal");
 
         function formatTime(seconds) {
             let minutes = Math.floor(seconds / 60);
@@ -388,6 +389,36 @@
                 headers: {
                     'Content-Type': 'application/json'
                 },
+                credentials: 'include'
+            })
+            .then(response => {
+                if (response.ok) {
+                    location.reload();
+                } else {
+                    alert('Ошибка при добавлении песни в плейлист');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Ошибка при добавлении песни в плейлист');
+            });
+        }
+        function openModal() {
+            modal.style.display = 'block';
+        }
+
+        function closeModal() {
+            modal.style.display = 'none';
+        }
+        function createPlaylist() {
+            let name = document.getElementById('playlistName').value;
+            let reqBody = JSON.stringify({Name: name});
+            fetch(`http://localhost:9998/create-playlist/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: reqBody,
                 credentials: 'include'
             })
             .then(response => {
