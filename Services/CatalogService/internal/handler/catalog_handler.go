@@ -279,6 +279,27 @@ func (h *CatalogHandler) AddSong() http.Handler {
 				return
 			}
 		}
+
+		var reqBody struct {
+			Term       string
+			EntityId   int
+			EntityType string
+		}
+		reqBody.Term = title
+		reqBody.EntityId = songId
+		reqBody.EntityType = "song"
+		jsonData, err := json.Marshal(reqBody)
+		if err != nil {
+			log.Print(err.Error())
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+		_, _, err = h.ProxyRequest(r, "http://localhost:9986/add-term/", bytes.NewBuffer(jsonData), http.MethodPost)
+		if err != nil {
+			log.Println(err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
 	})
 }
 

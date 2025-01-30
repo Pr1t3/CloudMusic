@@ -19,7 +19,7 @@ CREATE TABLE genres (
 
 CREATE TABLE songs (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    title VARCHAR(100) NOT NULL,
+    title VARCHAR(100) NOT NULL UNIQUE,
     duration int NOT NULL COMMENT "in seconds",
     size BIGINT not null,
     genre_id INT,

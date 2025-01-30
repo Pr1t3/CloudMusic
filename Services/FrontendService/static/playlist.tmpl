@@ -373,9 +373,10 @@
                 })
                 .then(response => response.json())
                 .then(playlistSongs => {
-                    playlistSongs = playlistSongs.Songs;
-                    console.log(playlistSongs);
-                    const filteredSongs = allSongs.filter(song => !playlistSongs.some(playlistSong => playlistSong.id === song.id));
+                    const filteredSongs = allSongs;
+                    if (playlistSongs.Songs != null) {
+                        filteredSongs = allSongs.filter(song => !playlistSongs.Songs.some(playlistSong => playlistSongs.Songs.id === song.id));
+                    }
         
                     const songListModal = document.getElementById('songListModal');
                     songListModal.innerHTML = '';

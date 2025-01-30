@@ -133,11 +133,15 @@
         <div class="nav-links">
             <a href="http://localhost:9997/playlists">Плейлисты</a>
         </div>
+        <div class="search-field">
+            <input type="text" id="searchField" required>
+            <button onclick="search()">Найти</button>
+        </div>
         <a href="http://localhost:9997/profile">
             <img id="profileImage" src="data:{{ .PhotoType }}; base64, {{ .PhotoData }}" alt="Фото профиля">
         </a>
     </div>
-    <div class="container">
+    <div class="container" id="songsContainer">
         <h1>Последние Песни</h1>
         <ul class="song-list">
             {{range .Songs}}
@@ -199,6 +203,8 @@
         let mainPlayButton = document.getElementById('main-play-button');
         let volumeControl = document.getElementById('volumeControl');
         let volumeSlider = document.getElementById('volumeSlider');
+        let songsContainer = document.getElementById('songsContainer');
+        let songsContainerInnerHtml = document.getElementById('songsContainer').innerHTML;
 
         function formatTime(seconds) {
             let minutes = Math.floor(seconds / 60);
@@ -303,6 +309,86 @@
                 audioPlayer.addEventListener('ended', resetPlayer);
             }
         });
+        function search() {
+            let prefix = document.getElementById('searchField').value;
+            if (prefix == "") {
+                songsContainer.innerHTML = songsContainerInnerHtml;
+            } else {
+                songsContainer.innerHTML = '<h1>Результаты поиска</h1>';
+                songsContainer.appendChild(document.createElement('ul'));
+                let songList = songsContainer.querySelector('ul');
+                songList.className = 'song-list';
+                fetch(`http://localhost:9998/search/${prefix}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include'
+                })
+                .then(response => {
+                    return response.json();
+                })
+                .then(termArray => {
+                    if (termArray == null) {
+                        return;
+                    }
+                    termArray.forEach(term => {
+                        fetch(`http://localhost:9998/get-entities/${term}`, {
+                            method: 'GET',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            credentials: 'include'
+                        })
+                        .then(response => response.json())
+                        .then(entitiesArray => {
+                            entitiesArray.forEach(ent => {
+                                fetch(`http://localhost:9989/songs/${ent.entity_id}`, {
+                                    method: 'GET',
+                                    headers: {
+                                        'Content-Type': 'application/json'
+                                    },
+                                    credentials: 'include'
+                                })
+                                .then(response => response.json())
+                                .then(song => {
+                                    fetch(`http://localhost:9998/authors/${ent.entity_id}`, {
+                                        method: 'GET',
+                                        headers: {
+                                            'Content-Type': 'application/json'
+                                        },
+                                        credentials: 'include'
+                                    })
+                                    .then(response => response.json())
+                                    .then(authors => {
+                                        const songItem = document.createElement('li');
+                                        songItem.className = 'song-item';
+                                        songItem.innerHTML = `
+                                        <div class="song-details">
+                                            <span class="song-title">${song.title}</span>
+                                            <span class="song-author">Автор:
+                                                ${authors.map(author => author.name).join(', ')}
+                                            </span>
+                                            <span class="song-duration">Длительность: ${formatTime(song.duration)}</span>
+                                        </div>
+                                        <button class="play-button" id="audioButton-${song.id}" onclick="togglePlayPauseWithParams(${song.id}, '${song.title}', [${authors.map(author => `'${author.name}'`).join(', ')}], ${song.duration})">
+                                            ▶️
+                                        </button>
+                                        `;
+                                        console.log(authors.map(author => `"${author.name}"`).join(', '));
+                                        songList.appendChild(songItem);
+                                    })
+                                })
+                            })
+                        })
+                    })
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Ошибка при добавлении песни в плейлист');
+                });
+            }
+        }
     </script>
 </body>
 </html>
