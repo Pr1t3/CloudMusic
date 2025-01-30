@@ -35,7 +35,7 @@ func main() {
 	services := []string{"http://localhost:9997", "http://localhost:9998", "http://localhost:9999", "http://localhost:9996", "http://localhost:9995"}
 	corsHandler := cors.New(cors.Options{
 		AllowedOrigins:   services,
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "PATCH"},
 		AllowedHeaders:   []string{"Content-Type"},
 		AllowCredentials: true,
 	})

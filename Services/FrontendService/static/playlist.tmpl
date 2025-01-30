@@ -116,7 +116,7 @@
         .volume-control input[type="range"] {
             width: 100%;
         }
-        .add-song-button {
+        .add-song-button, .share-button {
             background-color: #1DB954;
             border: none;
             color: white;
@@ -211,6 +211,11 @@
     <div class="container">
         <h1>Песни в {{ .Playlist.Name }}:</h1>
         <button class="add-song-button" onclick="openSongModal()">Добавить песню</button>
+        {{ if eq .Playlist.IsPublic true }}
+            <button class="share-button" onclick="sharePlaylists(false)">Перестать делиться</button>
+        {{ else }}
+            <button class="share-button" onclick="sharePlaylists(true)">Поделиться</button>
+        {{ end }}
         <ul class="song-list">
             {{range .Songs}}
                 <li class="song-item">
@@ -355,37 +360,51 @@
 
         function openSongModal() {
             document.getElementById('songModal').style.display = "block";
+        
             fetch('http://localhost:9998/songs', {
                 method: 'GET',
                 credentials: 'include'
             })
+            .then(response => response.json())
+            .then(allSongs => {
+                fetch('http://localhost:9987/playlists/{{ .Playlist.Id }}', {
+                    method: 'GET',
+                    credentials: 'include'
+                })
                 .then(response => response.json())
-                .then(data => {
+                .then(playlistSongs => {
+                    playlistSongs = playlistSongs.Songs;
+                    console.log(playlistSongs);
+                    const filteredSongs = allSongs.filter(song => !playlistSongs.some(playlistSong => playlistSong.id === song.id));
+        
                     const songListModal = document.getElementById('songListModal');
                     songListModal.innerHTML = '';
-                    data.forEach(song => {
+        
+                    filteredSongs.forEach(song => {
                         fetch(`http://localhost:9998/authors/${song.id}`, {
                             method: 'GET',
                             credentials: 'include'
                         })
-                            .then(response => response.json())
-                            .then(authors => {
-                                const songItem = document.createElement('li');
-                                songItem.className = 'song-item-modal';
-                                songItem.innerHTML = `
-                                    <div class="song-details-modal">
-                                        <span class="song-title-modal">${song.title}</span>
-                                        <span class="song-author-modal">Автор: ${authors.map(author => author.name).join(', ')}</span>
-                                        <span class="song-duration-modal">Длительность: ${formatTime(song.duration)}</span>
-                                    </div>
-                                    <button class="add-song-button-modal" onclick="addSongToPlaylist(${song.id})">Добавить</button>
-                                `;
-                                songListModal.appendChild(songItem);
-                            })
-                            .catch(error => console.error('Error:', error));
+                        .then(response => response.json())
+                        .then(authors => {
+                            const songItem = document.createElement('li');
+                            songItem.className = 'song-item-modal';
+                            songItem.innerHTML = `
+                                <div class="song-details-modal">
+                                    <span class="song-title-modal">${song.title}</span>
+                                    <span class="song-author-modal">Автор: ${authors.map(author => author.name).join(', ')}</span>
+                                    <span class="song-duration-modal">Длительность: ${formatTime(song.duration)}</span>
+                                </div>
+                                <button class="add-song-button-modal" onclick="addSongToPlaylist(${song.id})">Добавить</button>
+                            `;
+                            songListModal.appendChild(songItem);
+                        })
+                        .catch(error => console.error('Error:', error));
                     });
                 })
                 .catch(error => console.error('Error:', error));
+            })
+            .catch(error => console.error('Error:', error));
         }
 
         function closeSongModal() {
@@ -437,6 +456,34 @@
             .catch(error => {
                 console.error('Error:', error);
                 alert('Ошибка при добавлении песни в плейлист');
+            });
+        }
+
+        function sharePlaylists(newStatus) {
+            const playlistId = {{ .Playlist.Id }};
+            let url;
+            if (newStatus == true) {
+                url = `http://localhost:9998/make-public/${playlistId}`
+            } else {
+                url = `http://localhost:9998/make-private/${playlistId}`
+            }
+            fetch(url, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include'
+            })
+            .then(response => {
+                if (response.ok) {
+                    location.reload();
+                } else {
+                    alert('Ошибка при изменении приватности плейлиста');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Ошибка при изменении приватности плейлиста');
             });
         }
 

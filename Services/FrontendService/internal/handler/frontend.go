@@ -296,16 +296,16 @@ func PlaylistsPage() http.Handler {
 		}
 
 		templates := []string{
-			"./static/playlists_page.tmpl",
+			"./static/all_playlists.tmpl",
 		}
 
 		funcMap := template.FuncMap{
 			"FormatTime": func(t time.Time) string {
-				return t.Format("January 2, 2006 at 15:04:05 PM")
+				return t.Format("January 2, 2006 at 15:04:05")
 			},
 		}
 
-		ts, err := template.New("playlists_page.tmpl").Funcs(funcMap).ParseFiles(templates...)
+		ts, err := template.New("all_playlists.tmpl").Funcs(funcMap).ParseFiles(templates...)
 		if err != nil {
 			log.Println(err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)

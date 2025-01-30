@@ -26,11 +26,13 @@ func main() {
 	mux.Handle("/songs/", service.StripSuffix("/", handler.ProxyHandler("http://localhost:9989")))
 	mux.Handle("/authors/", handler.ProxyHandler("http://localhost:9989"))
 	mux.Handle("/start-song/", handler.ProxyHandler("http://localhost:9988"))
+	mux.Handle("/make-private/", handler.ProxyHandler("http://localhost:9987"))
+	mux.Handle("/make-public/", handler.ProxyHandler("http://localhost:9987"))
 
-	services := []string{"http://localhost:9997", "http://localhost:9998", "http://localhost:9999", "http://localhost:9996", "http://localhost:9995", "http://localhost:9989", "http://localhost:9988", "http://localhost:9987"}
+	services := []string{"http://localhost:9997", "http://localhost:9998", "http://localhost:9996", "http://localhost:9995", "http://localhost:9989", "http://localhost:9988", "http://localhost:9987"}
 	corsHandler := cors.New(cors.Options{
 		AllowedOrigins:   services,
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "PATCH"},
 		AllowedHeaders:   []string{"Content-Type", "Hash"},
 		AllowCredentials: true,
 	})

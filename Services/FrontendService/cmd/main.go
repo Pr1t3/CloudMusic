@@ -22,16 +22,16 @@ func main() {
 	mux.Handle("/playlists", middleware.VerifyAuthMiddleware(handler.PlaylistsPage()))
 	mux.Handle("/playlists/", middleware.VerifyAuthMiddleware(handler.ShowPlaylist()))
 
-	services := []string{"http://localhost:9997", "http://localhost:9987", "http://localhost:9998", "http://localhost:9999", "http://localhost:9996", "http://localhost:9995"}
+	services := []string{"http://localhost:9997", "http://localhost:9987", "http://localhost:9998", "http://localhost:9999", "http://localhost:9996", "http://localhost:9995", "http://localhost:9989"}
 	corsHandler := cors.New(cors.Options{
 		AllowedOrigins:   services,
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "PATCH"},
 		AllowedHeaders:   []string{"Content-Type"},
 		AllowCredentials: true,
 	})
 
-	log.Println("API Gateway starting on port 9997...")
+	log.Println("Frontend Service starting on port 9997...")
 	if err := http.ListenAndServe(":9997", corsHandler.Handler(mux)); err != nil {
-		log.Fatalf("Failed to start API Gateway: %v", err)
+		log.Fatalf("Failed to start Frontend Service: %v", err)
 	}
 }
