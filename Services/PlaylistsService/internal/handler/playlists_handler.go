@@ -3,6 +3,7 @@ package handler
 import (
 	"PlaylistsService/internal/models"
 	"PlaylistsService/internal/service"
+	"bytes"
 	"encoding/json"
 	"io"
 	"log"
@@ -59,12 +60,34 @@ func (p *PlaylistHandler) CreatePlaylist() http.Handler {
 			return
 		}
 
-		err = p.playlistService.AddPlaylist(claims.UserId, playlistName.Name)
+		playlistId, err := p.playlistService.AddPlaylist(claims.UserId, playlistName.Name)
 		if err != nil {
 			log.Print(err.Error())
 			http.Error(w, "Ошибка при добавлении плейлиста", http.StatusInternalServerError)
 			return
 		}
+
+		var reqBody struct {
+			Term       string
+			EntityId   int
+			EntityType string
+		}
+		reqBody.Term = playlistName.Name
+		reqBody.EntityId = playlistId
+		reqBody.EntityType = "playlist"
+		jsonData, err := json.Marshal(reqBody)
+		if err != nil {
+			log.Print(err.Error())
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+		_, _, err = p.ProxyRequest(r, "http://localhost:9986/add-term/", bytes.NewBuffer(jsonData), http.MethodPost)
+		if err != nil {
+			log.Println(err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
 		w.WriteHeader(http.StatusOK)
 	})
 }

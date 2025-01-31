@@ -21,13 +21,11 @@ func NewCatalogServiceOnlyAuthor(au repository.AuthorRepo) *CatalogService {
 }
 
 func (c *CatalogService) GetSongs() ([]models.Song, error) {
-	songs, err := c.songRepo.GetSongs()
-	return songs, err
+	return c.songRepo.GetSongs()
 }
 
-func (c *CatalogService) GetSong(id int) (models.Song, error) {
-	song, err := c.songRepo.GetSong(id)
-	return *song, err
+func (c *CatalogService) GetSong(id int) (*models.Song, error) {
+	return c.songRepo.GetSong(id)
 }
 
 func (c *CatalogService) AddSong(title, filePath string, duration int, genreId *int, size int64) (int, error) {
@@ -68,6 +66,14 @@ func (c *CatalogService) GetAuthorsBySongId(songId int) ([]models.Author, error)
 	return authors, nil
 }
 
-func (c *CatalogService) AddAuthor(userId int, name string) error {
+func (c *CatalogService) GetAuthorById(id int) (*models.Author, error) {
+	return c.authorRepo.GetAuthorById(id)
+}
+
+func (c *CatalogService) AddAuthor(userId int, name string) (int, error) {
 	return c.authorRepo.AddAuthor(userId, name)
+}
+
+func (c *CatalogService) GetAllSongsByAuthorId(authorId int) ([]models.Song, error) {
+	return c.songAuthorRepo.GetAllSongsByAuthorId(authorId)
 }

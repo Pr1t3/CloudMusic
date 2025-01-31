@@ -51,6 +51,6 @@ func (ps *PlaylistService) RemovePlaylist(playlistId int) error {
 	return ps.playlistRepo.RemovePlaylist(playlistId)
 }
 
-func (ps *PlaylistService) AddPlaylist(userId int, name string) error {
+func (ps *PlaylistService) AddPlaylist(userId int, name string) (int, error) {
 	return ps.playlistRepo.AddPlaylist(userId, name)
 }

@@ -209,7 +209,7 @@
         </a>
     </div>
     <div class="container">
-        <h1>Песни в {{ .Playlist.Name }}:</h1>
+        <h1>Плейлист {{ .Playlist.Name }}:</h1>
         <button class="add-song-button" onclick="openSongModal()">Добавить песню</button>
         {{ if eq .Playlist.IsPublic true }}
             <button class="share-button" onclick="sharePlaylists(false)">Перестать делиться</button>

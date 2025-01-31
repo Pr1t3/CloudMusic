@@ -46,8 +46,12 @@ func (a *AuthorRepo) GetAuthorByName(name string) (*models.Author, error) {
 	return &author, err
 }
 
-func (a *AuthorRepo) AddAuthor(userId int, name string) error {
+func (a *AuthorRepo) AddAuthor(userId int, name string) (int, error) {
 	query := `INSERT INTO authors (user_id, name) VALUES(?,?)`
-	_, err := a.Db.Exec(query, userId, name)
-	return err
+	res, err := a.Db.Exec(query, userId, name)
+	if err != nil {
+		return 0, err
+	}
+	authorId, err := res.LastInsertId()
+	return int(authorId), err
 }

@@ -35,3 +35,20 @@ func (sa *SongAuthorRepo) AddAuthorBySongId(author models.Author, songId int) er
 	_, err := sa.Db.Exec(query, songId, author.Id)
 	return err
 }
+
+func (sa *SongAuthorRepo) GetAllSongsByAuthorId(authorId int) ([]models.Song, error) {
+	query := `SELECT s.* FROM songs AS s JOIN song_authors AS sa ON s.id = sa.song_id WHERE sa.author_id = ?`
+	songs := []models.Song{}
+	rows, err := sa.Db.Query(query, authorId)
+	if err != nil {
+		return nil, err
+	}
+	for rows.Next() {
+		song := models.Song{}
+		if err := rows.Scan(&song.Id, &song.Title, &song.Duration, &song.Size, &song.GenreId, &song.FilePath, &song.AddedAt); err != nil {
+			return nil, err
+		}
+		songs = append(songs, song)
+	}
+	return songs, nil
+}

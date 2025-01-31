@@ -40,10 +40,14 @@ func (p *PlayListRepo) GetPlaylistById(playlistId int) (*models.Playlist, error)
 	return &playlist, nil
 }
 
-func (p *PlayListRepo) AddPlaylist(userId int, name string) error {
+func (p *PlayListRepo) AddPlaylist(userId int, name string) (int, error) {
 	query := `INSERT INTO playlists (user_id, name) VALUES(?,?)`
-	_, err := p.Db.Exec(query, userId, name)
-	return err
+	res, err := p.Db.Exec(query, userId, name)
+	if err != nil {
+		return 0, err
+	}
+	playlistId, err := res.LastInsertId()
+	return int(playlistId), err
 }
 
 func (p *PlayListRepo) RemovePlaylist(playlistId int) error {

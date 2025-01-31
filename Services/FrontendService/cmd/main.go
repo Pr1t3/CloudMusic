@@ -21,6 +21,7 @@ func main() {
 	mux.Handle("/become-author/", middleware.VerifyAuthMiddleware(handler.BecomeAuthorPage()))
 	mux.Handle("/playlists", middleware.VerifyAuthMiddleware(handler.PlaylistsPage()))
 	mux.Handle("/playlists/", middleware.VerifyAuthMiddleware(handler.ShowPlaylist()))
+	mux.Handle("/authors/", middleware.VerifyAuthMiddleware(handler.ShowAuthorPage()))
 
 	services := []string{"http://localhost:9997", "http://localhost:9987", "http://localhost:9998", "http://localhost:9999", "http://localhost:9996", "http://localhost:9995", "http://localhost:9989"}
 	corsHandler := cors.New(cors.Options{

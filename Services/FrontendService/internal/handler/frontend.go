@@ -417,3 +417,84 @@ func ShowPlaylist() http.Handler {
 		}
 	})
 }
+
+func ShowAuthorPage() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		templates := []string{
+			"./static/author.tmpl",
+		}
+
+		funcMap := template.FuncMap{
+			"formatDuration": func(totalSeconds int) string {
+				hours := totalSeconds / 3600
+				minutes := totalSeconds / 60
+				seconds := totalSeconds % 60
+				if hours > 0 {
+					return fmt.Sprintf("%02d:%02d:%02d", hours, minutes, seconds)
+				}
+				return fmt.Sprintf("%02d:%02d", minutes, seconds)
+			},
+		}
+
+		ts, err := template.New("author.tmpl").Funcs(funcMap).ParseFiles(templates...)
+		if err != nil {
+			log.Println(err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		var data struct {
+			PhotoType string
+			PhotoData string
+			Author    models.Author
+			Songs     []models.Song
+		}
+
+		photoData, headers, err := ProxyRequest(r, "http://localhost:9999/get-profile-photo", nil, http.MethodGet)
+		if err != nil {
+			http.Error(w, "Server Internal Error", http.StatusInternalServerError)
+			return
+		}
+
+		data.PhotoData = base64.StdEncoding.EncodeToString(photoData)
+		data.PhotoType = headers.Get("Photo-Type")
+
+		parts := strings.Split(r.URL.Path, "/")
+		authorId := parts[len(parts)-1]
+		respBody, _, err := ProxyRequest(r, "http://localhost:9989/songs-by-author/"+authorId, nil, http.MethodGet)
+		if err != nil {
+			log.Print(err.Error())
+			http.Error(w, "Server Internal Error", http.StatusInternalServerError)
+			return
+		}
+
+		if err := json.Unmarshal(respBody, &data.Songs); err != nil {
+			log.Print(err.Error())
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		respBody, _, err = ProxyRequest(r, "http://localhost:9989/author/"+authorId, nil, http.MethodGet)
+		if err != nil {
+			log.Print(err.Error())
+			http.Error(w, "Server Internal Error", http.StatusInternalServerError)
+			return
+		}
+		if err := json.Unmarshal(respBody, &data.Author); err != nil {
+			log.Print(err.Error())
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+		err = ts.Execute(w, data)
+		if err != nil {
+			log.Println(err)
+			http.Error(w, "Failed to execute template", http.StatusInternalServerError)
+			return
+		}
+	})
+}

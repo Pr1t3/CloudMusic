@@ -325,10 +325,31 @@ func (h *CatalogHandler) BecomeAuthor() http.Handler {
 		}
 
 		name := r.FormValue("name")
-		err = h.catalogService.AddAuthor(claims.UserId, name)
+		authorId, err := h.catalogService.AddAuthor(claims.UserId, name)
 		if err != nil {
 			log.Print(err.Error())
 			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		var reqBody struct {
+			Term       string
+			EntityId   int
+			EntityType string
+		}
+		reqBody.Term = name
+		reqBody.EntityId = authorId
+		reqBody.EntityType = "author"
+		jsonData, err := json.Marshal(reqBody)
+		if err != nil {
+			log.Print(err.Error())
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+		_, _, err = h.ProxyRequest(r, "http://localhost:9986/add-term/", bytes.NewBuffer(jsonData), http.MethodPost)
+		if err != nil {
+			log.Println(err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			return
 		}
 	})
@@ -361,5 +382,69 @@ func (h *CatalogHandler) IsAuthor() http.Handler {
 			return
 		}
 		w.WriteHeader(http.StatusOK)
+	})
+}
+
+func (h *CatalogHandler) GetAuthorInfo() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "Method is not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		parts := strings.Split(r.URL.Path, "/")
+		authorId, err := strconv.Atoi(parts[len(parts)-1])
+		if err != nil {
+			log.Print(err.Error())
+			http.Error(w, "Invalid author ID", http.StatusBadRequest)
+			return
+		}
+
+		author, err := h.catalogService.GetAuthorById(authorId)
+		if err != nil {
+			log.Print(err.Error())
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		jsonData, err := json.Marshal(author)
+		if err != nil {
+			log.Print(err.Error())
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+		w.Write(jsonData)
+	})
+}
+
+func (h *CatalogHandler) GetAllSongsByAuthor() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "Method is not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		parts := strings.Split(r.URL.Path, "/")
+		authorId, err := strconv.Atoi(parts[len(parts)-1])
+		if err != nil {
+			log.Print(err.Error())
+			http.Error(w, "Invalid author ID", http.StatusBadRequest)
+			return
+		}
+
+		songs, err := h.catalogService.GetAllSongsByAuthorId(authorId)
+		if err != nil {
+			log.Print(err.Error())
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		jsonData, err := json.Marshal(songs)
+		if err != nil {
+			log.Print(err.Error())
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(jsonData)
 	})
 }
